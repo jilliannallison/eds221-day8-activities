@@ -1,0 +1,104 @@
+---
+title: 'Day 8 Activities: Data visualization'
+author: "Jillian Allison"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# General use packages:
+library(tidyverse)
+library(here)
+library(janitor)
+
+# Specifically for plots:
+library(patchwork)
+library(ggrepel)
+library(gghighlight)
+library(paletteer)
+library(ggExtra)
+library(ggbeeswarm)
+
+# And for another dataset we'll explore:
+library(gapminder)
+
+# Spatial
+library(sf)
+```
+
+### My best graph ever 
+
+Using the ‘space_launches.csv’ data (I’ll drop this into Slack), create a new .Rmd and create your worst possible graph by customizing (from the ggplot default) in at least 8 ways - more encouraged - to make it as terrible as possible. The data were previously shared for #TidyTuesday, and descriptions of dataset & variables can be found here. You can plot whatever variable(s) you choose, and make whatever graph type you want.
+
+
+```{r}
+# Finding number of failures each year 
+failed_space_launches <- read_csv(here("data","space_launches.csv")) %>%
+  filter(agency == "US", category == "F") %>% 
+  group_by(launch_year) %>%
+  summarize(count = n())
+```
+
+```{r}
+ggplot(data = failed_space_launches, 
+       aes(x = launch_year, 
+           y = count)) +
+  geom_point(shape = 8, 
+             color = "yellow",
+             fill = "yellow",
+             size = 40) + 
+    labs(title = "AMERICAN FAILURES",
+       y = "FAILURE!!!!") + 
+  theme(panel.background = element_rect(fill = "black"),
+        panel.grid = element_line(color = "red"), 
+        text = element_text(color = "red"),
+        axis.text = element_text(color = "yellow", 
+                                 size = "20"), 
+        axis.title.x = element_blank()) + 
+  geom_vline(xintercept = 2000, linetype = "dotted", color = "pink", size = 5) + 
+  geom_vline(xintercept = 1981, linetype = "dotted", color = "red", size = 5) + 
+  geom_vline(xintercept = 1997, linetype = "dashed", color = "blue", size = 5) +
+  annotate("text",x = 1980, y = 12, label = "BEFORE Y2K", color = "yellow", size = 13) + 
+  annotate("text",x = 2000, y = 8, label = "Y2K", color = "red", size = 13) +
+  annotate("text",x = 1981, y = 4, label = "REAGAN ELECTED", color = "green", size = 8) +
+  annotate("text",x = 1997, y = 6, label = "TITANIC RELEASED", color = "dodgerblue", size = 5) 
+
+```
+
+
+### Task 2
+
+```{r}
+sf_emissions <- read_csv(here("data","San_Francisco_Communitywide_Greenhouse_Gas_Inventory.csv"))
+
+annual_emissions_sector <- sf_emissions %>%
+  group_by(Sector_General) %>%
+  summarize(total_emissions = sum(Emissions_mtCO2e, na.rm = TRUE))
+
+annual_emissions_year_com <- sf_emissions %>% 
+  group_by(Calendar_Year, Commodity_Type) %>%
+  summarize(total_emissions = sum(Emissions_mtCO2e, na.rm = TRUE))
+
+# Create a subset of the data that only contains observations from 2005 on, only for observations where Sector_Detail2 contains the pattern “PG&E”, then limit to columns Calendar_Year, Sector_Detail2 and Emissions_mtCO2e.
+
+
+ex_3 <- sf_emissions %>%
+  filter(Calendar_Year >= 2005) %>% 
+  filter(grepl("PG&E", Sector_Detail2)) %>%
+  select(Calendar_Year, Sector_Detail2, Emissions_mtCO2e)
+
+```
+
+```{r}
+ggplot(data = annual_emissions_sector, 
+       aes(x = fct_reorder(Sector_General, -total_emissions),
+           y = total_emissions)) + 
+  geom_col(fill = "darkslategrey") + 
+  labs(title = "Greenhouse Gas Emissions by Sector Since 1990",
+       subtitle = "San Francisco, CA",
+       y = "Total Emissions (mtCO2e)",
+       x = "Sector") + 
+  theme_minimal() 
+```
+
